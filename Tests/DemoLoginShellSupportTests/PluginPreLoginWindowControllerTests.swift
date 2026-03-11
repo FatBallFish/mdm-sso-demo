@@ -5,84 +5,54 @@ import XCTest
 
 @MainActor
 final class PluginPreLoginWindowControllerTests: XCTestCase {
-    func test_text_fields_disable_modern_text_features() {
-        let viewModel = PreLoginPanelViewModel { _, _ in
+    func test_controller_exposes_three_demo_action_buttons() {
+        let viewModel = PreLoginPanelViewModel { _ in
             .allow(localShortName: "demouser", authSource: .fallback)
         }
         let controller = PluginPreLoginWindowController(viewModel: viewModel)
         _ = controller.window
 
-        XCTAssertFalse(controller.usernameField.isAutomaticTextCompletionEnabled)
-        XCTAssertFalse(controller.passwordField.isAutomaticTextCompletionEnabled)
-        XCTAssertFalse(controller.usernameField.allowsCharacterPickerTouchBarItem)
-        XCTAssertFalse(controller.passwordField.allowsCharacterPickerTouchBarItem)
-
-        if #available(macOS 15.2, *) {
-            XCTAssertFalse(controller.usernameField.allowsWritingTools)
-            XCTAssertFalse(controller.passwordField.allowsWritingTools)
-        }
+        XCTAssertEqual(controller.successButton.title, "Validate Success")
+        XCTAssertEqual(controller.failureButton.title, "Validate Failure")
+        XCTAssertEqual(controller.cancelButton.title, "Back To macOS Login")
     }
 
-    func test_begin_editing_disables_field_editor_text_services() {
-        let viewModel = PreLoginPanelViewModel { _, _ in
+    func test_default_status_text_is_instructional() {
+        let viewModel = PreLoginPanelViewModel { _ in
             .allow(localShortName: "demouser", authSource: .fallback)
         }
         let controller = PluginPreLoginWindowController(viewModel: viewModel)
         _ = controller.window
 
-        let fieldEditor = NSTextView(frame: .zero)
-        fieldEditor.isAutomaticTextCompletionEnabled = true
-        fieldEditor.isContinuousSpellCheckingEnabled = true
-        fieldEditor.isGrammarCheckingEnabled = true
-        fieldEditor.smartInsertDeleteEnabled = true
-        fieldEditor.isAutomaticQuoteSubstitutionEnabled = true
-        fieldEditor.isAutomaticDashSubstitutionEnabled = true
-        fieldEditor.isAutomaticTextReplacementEnabled = true
-        fieldEditor.isAutomaticSpellingCorrectionEnabled = true
-        fieldEditor.isAutomaticLinkDetectionEnabled = true
-        fieldEditor.isAutomaticDataDetectionEnabled = true
-        if #available(macOS 15.0, *) {
-            fieldEditor.writingToolsBehavior = .default
-        }
-
-        let notification = Notification(
-            name: NSControl.textDidBeginEditingNotification,
-            object: controller.usernameField,
-            userInfo: ["NSFieldEditor": fieldEditor]
+        XCTAssertEqual(
+            controller.statusLabel.stringValue,
+            "Use the buttons below to verify the plug-in can allow, deny, or return to the native macOS login screen."
         )
-        controller.controlTextDidBeginEditing(notification)
-
-        XCTAssertFalse(fieldEditor.isAutomaticTextCompletionEnabled)
-        XCTAssertFalse(fieldEditor.isContinuousSpellCheckingEnabled)
-        XCTAssertFalse(fieldEditor.isGrammarCheckingEnabled)
-        XCTAssertFalse(fieldEditor.smartInsertDeleteEnabled)
-        XCTAssertFalse(fieldEditor.isAutomaticQuoteSubstitutionEnabled)
-        XCTAssertFalse(fieldEditor.isAutomaticDashSubstitutionEnabled)
-        XCTAssertFalse(fieldEditor.isAutomaticTextReplacementEnabled)
-        XCTAssertFalse(fieldEditor.isAutomaticSpellingCorrectionEnabled)
-        XCTAssertFalse(fieldEditor.isAutomaticLinkDetectionEnabled)
-        XCTAssertFalse(fieldEditor.isAutomaticDataDetectionEnabled)
-        if #available(macOS 15.0, *) {
-            XCTAssertEqual(fieldEditor.writingToolsBehavior, .none)
-        }
     }
 
-    func test_submit_button_requires_username_and_password() {
-        let viewModel = PreLoginPanelViewModel { _, _ in
-            .allow(localShortName: "demouser", authSource: .fallback)
+    func test_failure_message_updates_status_label() async {
+        let viewModel = PreLoginPanelViewModel { action in
+            XCTAssertEqual(action, .validateFailure)
+            return .deny(message: "Demo validation failed.")
         }
         let controller = PluginPreLoginWindowController(viewModel: viewModel)
         _ = controller.window
 
-        XCTAssertFalse(controller.submitButton.isEnabled)
+        controller.validateFailurePressed(nil)
+        let failureShown = expectation(description: "failure shown")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            failureShown.fulfill()
+        }
+        await fulfillment(of: [failureShown], timeout: 1.0)
 
-        controller.usernameField.stringValue = "demo.user"
-        controller.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: controller.usernameField))
-        XCTAssertFalse(controller.submitButton.isEnabled)
+        for _ in 0..<50 where (!controller.successButton.isEnabled || !controller.failureButton.isEnabled || !controller.cancelButton.isEnabled) {
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
 
-        controller.passwordField.stringValue = "DemoPass123!"
-        controller.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: controller.passwordField))
-
-        XCTAssertTrue(controller.submitButton.isEnabled)
+        XCTAssertEqual(controller.statusLabel.stringValue, "Demo validation failed.")
+        XCTAssertNil(viewModel.completedResult)
+        XCTAssertTrue(controller.successButton.isEnabled)
+        XCTAssertTrue(controller.failureButton.isEnabled)
+        XCTAssertTrue(controller.cancelButton.isEnabled)
     }
 }

@@ -56,16 +56,20 @@ final class DemoLoginShellAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func launchPluginMode(resultFileURL: URL) {
-        let validator = PluginCredentialValidator(remoteIDP: DemoIDPHTTPClient(baseURL: launchOptions.idpBaseURL))
-        let viewModel = PreLoginPanelViewModel { username, password in
-            try await validator.validate(username: username, password: password)
+        let viewModel = PreLoginPanelViewModel { action in
+            switch action {
+            case .validateSuccess:
+                return .allow(localShortName: action.localShortName ?? "demouser", authSource: .fallback)
+            case .validateFailure:
+                return .deny(message: "Demo validation failed.")
+            }
         }
 
         preLoginObserver = viewModel.$completedResult
             .compactMap { $0 }
             .sink { [weak self, weak viewModel] result in
                 guard let self, let viewModel else { return }
-                self.finishPluginMode(result: result, password: viewModel.password, resultFileURL: resultFileURL)
+                self.finishPluginMode(result: result, password: viewModel.completedPassword, resultFileURL: resultFileURL)
             }
 
         let controller = PluginPreLoginWindowController(viewModel: viewModel)

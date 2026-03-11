@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct PluginPreLoginView: View {
     @ObservedObject private var viewModel: PreLoginPanelViewModel
+    private let defaultStatusText = "Use the buttons below to verify the plug-in can allow, deny, or return to the native macOS login screen."
 
     public init(viewModel: PreLoginPanelViewModel) {
         self.viewModel = viewModel
@@ -24,39 +25,32 @@ public struct PluginPreLoginView: View {
                     .font(.system(size: 28, weight: .semibold))
                     .foregroundStyle(.white)
 
-                Text("Authenticate with the demo IdP before the native macOS login flow continues.")
+                Text("This pre-login demo avoids text input and verifies that the Authorization plug-in can allow, deny, or return to the native login flow.")
                     .font(.system(size: 14))
                     .foregroundStyle(.white.opacity(0.82))
 
                 VStack(alignment: .leading, spacing: 12) {
-                    TextField("SSO username", text: $viewModel.username)
-                        .textFieldStyle(.roundedBorder)
-                    SecureField("SSO password", text: $viewModel.password)
-                        .textFieldStyle(.roundedBorder)
-
-                    Text("The shell first calls the local HTTP IdP. If it is unavailable, the seeded demo credentials are used as fallback.")
+                    Text(viewModel.errorMessage ?? (viewModel.isSubmitting ? "Applying demo validation..." : defaultStatusText))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(viewModel.errorMessage == nil ? Color.secondary : Color.red)
 
-                    if let errorMessage = viewModel.errorMessage {
-                        Text(errorMessage)
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.red)
-                    }
+                    VStack(alignment: .leading, spacing: 10) {
+                        Button(viewModel.isSubmitting ? "Validating..." : "Validate Success") {
+                            Task { await viewModel.submit(action: .validateSuccess) }
+                        }
+                        .keyboardShortcut(.defaultAction)
+                        .disabled(viewModel.isSubmitting)
 
-                    HStack {
-                        Button("Cancel") {
+                        Button("Validate Failure") {
+                            Task { await viewModel.submit(action: .validateFailure) }
+                        }
+                        .disabled(viewModel.isSubmitting)
+
+                        Button("Back To macOS Login") {
                             viewModel.cancel()
                         }
                         .keyboardShortcut(.cancelAction)
-
-                        Spacer()
-
-                        Button(viewModel.isSubmitting ? "Signing In..." : "Sign In") {
-                            Task { await viewModel.submit() }
-                        }
-                        .keyboardShortcut(.defaultAction)
-                        .disabled(viewModel.isSubmitting || viewModel.username.isEmpty || viewModel.password.isEmpty)
+                        .disabled(viewModel.isSubmitting)
                     }
                 }
                 .padding(20)

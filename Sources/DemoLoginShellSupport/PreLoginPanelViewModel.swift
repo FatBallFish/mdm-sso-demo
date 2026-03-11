@@ -3,13 +3,12 @@ import Foundation
 
 @MainActor
 public final class PreLoginPanelViewModel: ObservableObject {
-    public typealias Validator = @Sendable (String, String) async throws -> PreLoginAuthResult
+    public typealias Validator = @Sendable (PreLoginDemoAction) async throws -> PreLoginAuthResult
 
-    @Published public var username: String = ""
-    @Published public var password: String = ""
     @Published public private(set) var isSubmitting = false
     @Published public private(set) var errorMessage: String?
     @Published public private(set) var completedResult: PreLoginAuthResult?
+    @Published public private(set) var completedPassword: String = ""
 
     private let validator: Validator
 
@@ -17,7 +16,7 @@ public final class PreLoginPanelViewModel: ObservableObject {
         self.validator = validator
     }
 
-    public func submit() async {
+    public func submit(action: PreLoginDemoAction) async {
         guard !isSubmitting else { return }
 
         isSubmitting = true
@@ -25,21 +24,28 @@ public final class PreLoginPanelViewModel: ObservableObject {
         defer { isSubmitting = false }
 
         do {
-            let result = try await validator(username, password)
+            let result = try await validator(action)
             switch result {
-            case .allow, .userCanceled:
+            case .allow:
                 completedResult = result
+                completedPassword = action.password
+            case .userCanceled:
+                completedResult = result
+                completedPassword = ""
             case let .deny(message):
                 errorMessage = message
                 completedResult = nil
+                completedPassword = ""
             }
         } catch {
             errorMessage = "Unexpected login error."
             completedResult = nil
+            completedPassword = ""
         }
     }
 
     public func cancel() {
+        completedPassword = ""
         completedResult = .userCanceled
     }
 }
