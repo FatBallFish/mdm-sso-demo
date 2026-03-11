@@ -1,0 +1,25 @@
+{
+  "issuer": "http://127.0.0.1:48080",
+  "accounts": [
+    {
+      "username": "demo.user",
+      "password": "DemoPass123!",
+      "localShortName": "demouser",
+      "displayName": "Demo User"
+    },
+    {
+      "username": "it.admin",
+      "password": "AdminPass123!",
+      "localShortName": "itadmin",
+      "displayName": "IT Admin"
+    },
+    {
+      "username": "qa.user",
+      "password": "QAPass123!",
+      "localShortName": "qauser",
+      "displayName": "QA User"
+    }
+  ],
+  "accessTokenTTLSeconds": 3600,
+  "refreshTokenTTLSeconds": 86400
+}

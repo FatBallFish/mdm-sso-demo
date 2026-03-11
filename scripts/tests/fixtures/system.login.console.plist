@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>class</key>
+  <string>evaluate-mechanisms</string>
+  <key>comment</key>
+  <string>Login mechanism based rule. Not for general use, yet.</string>
+  <key>mechanisms</key>
+  <array>
+    <string>builtin:prelogin</string>
+    <string>builtin:policy-banner</string>
+    <string>loginwindow:login</string>
+    <string>builtin:login-begin</string>
+    <string>builtin:reset-password,privileged</string>
+    <string>loginwindow:FDESupport,privileged</string>
+    <string>builtin:forward-login,privileged</string>
+    <string>builtin:auto-login,privileged</string>
+    <string>builtin:authenticate,privileged</string>
+    <string>builtin:login-success</string>
+    <string>loginwindow:success</string>
+    <string>loginwindow:done</string>
+  </array>
+  <key>tries</key>
+  <integer>10000</integer>
+  <key>version</key>
+  <integer>11</integer>
+</dict>
+</plist>

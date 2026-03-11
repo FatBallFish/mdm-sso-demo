@@ -1,5 +1,12 @@
 .worktrees/
 .build/
+.cache/
+.home/
+.swiftpm-cache/
+.idp-smoke.log
+.broker-idp.log
+.broker-state/
+dist/
 DerivedData/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
