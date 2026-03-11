@@ -16,7 +16,7 @@
 12. Run `bash scripts/tests/plugin_bundle_smoke.sh` and confirm the generated plug-in bundle contains `Contents/Info.plist` and an executable binary.
 13. Run `bash scripts/tests/install_root_smoke.sh` and confirm a full staging install succeeds into a temp root.
 14. Run `bash scripts/tests/uninstall_root_smoke.sh` and confirm staged artifacts are removed again.
-15. Run `bash scripts/tests/authdb_transform_smoke.sh` and confirm the generated rule inserts `DemoLoginPlugin:login,privileged` after `loginwindow:login`.
+15. Run `bash scripts/tests/authdb_transform_smoke.sh` and confirm the generated rule inserts `DemoLoginPlugin:login,privileged` before `loginwindow:login`.
 16. Run `bash scripts/tests/authdb_restore_smoke.sh` and confirm a backup plist can be restored to an output plist byte-for-byte.
 
 ## Planned next slice

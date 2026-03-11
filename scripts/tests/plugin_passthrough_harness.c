@@ -1,4 +1,7 @@
 #include <Security/AuthorizationPlugin.h>
+#include <Security/AuthorizationTags.h>
+#include <CoreFoundation/CoreFoundation.h>
+#include <string.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +15,11 @@ extern OSStatus AuthorizationPluginCreate(
 static int g_set_result_calls = 0;
 static AuthorizationResult g_last_result = kAuthorizationResultUndefined;
 static AuthorizationEngineRef g_last_engine = NULL;
+static int g_context_username_set = 0;
+static int g_context_password_set = 0;
+static int g_hint_shared_set = 0;
+static char g_context_username[256] = {0};
+static char g_context_password[256] = {0};
 
 static OSStatus FakeSetResult(AuthorizationEngineRef inEngine, AuthorizationResult inResult) {
     g_set_result_calls += 1;
@@ -20,20 +28,67 @@ static OSStatus FakeSetResult(AuthorizationEngineRef inEngine, AuthorizationResu
     return errAuthorizationSuccess;
 }
 
+static OSStatus FakeSetContextValue(
+    AuthorizationEngineRef inEngine,
+    AuthorizationString inKey,
+    AuthorizationContextFlags inContextFlags,
+    const AuthorizationValue *inValue
+) {
+    (void)inEngine;
+    (void)inContextFlags;
+
+    if (inKey == NULL || inValue == NULL || inValue->data == NULL) {
+        return errAuthorizationSuccess;
+    }
+
+    if (strcmp(inKey, kAuthorizationEnvironmentUsername) == 0) {
+        size_t length = inValue->length < sizeof(g_context_username) - 1 ? inValue->length : sizeof(g_context_username) - 1;
+        memcpy(g_context_username, inValue->data, length);
+        g_context_username[length] = '\0';
+        g_context_username_set = 1;
+    } else if (strcmp(inKey, kAuthorizationEnvironmentPassword) == 0) {
+        size_t length = inValue->length < sizeof(g_context_password) - 1 ? inValue->length : sizeof(g_context_password) - 1;
+        memcpy(g_context_password, inValue->data, length);
+        g_context_password[length] = '\0';
+        g_context_password_set = 1;
+    }
+
+    return errAuthorizationSuccess;
+}
+
+static OSStatus FakeSetHintValue(
+    AuthorizationEngineRef inEngine,
+    AuthorizationString inKey,
+    const AuthorizationValue *inValue
+) {
+    (void)inEngine;
+    (void)inValue;
+
+    if (inKey != NULL && strcmp(inKey, kAuthorizationEnvironmentShared) == 0) {
+        g_hint_shared_set = 1;
+    }
+
+    return errAuthorizationSuccess;
+}
+
 static OSStatus FakeUnsupported(void) {
     return errAuthorizationSuccess;
 }
 
 int main(void) {
+    const char *expected_result = getenv("EXPECT_RESULT");
+    const char *expected_username = getenv("EXPECT_CONTEXT_USERNAME");
+    const char *expected_password = getenv("EXPECT_CONTEXT_PASSWORD");
+
     AuthorizationCallbacks callbacks = {
         .version = kAuthorizationCallbacksVersion,
         .SetResult = FakeSetResult,
         .RequestInterrupt = (void *)FakeUnsupported,
         .DidDeactivate = (void *)FakeUnsupported,
         .GetContextValue = NULL,
-        .SetContextValue = NULL,
+        .SetContextValue = FakeSetContextValue,
         .GetHintValue = NULL,
-        .SetHintValue = NULL,
+        .SetHintValue = FakeSetHintValue,
         .GetArguments = NULL,
         .GetSessionId = NULL,
         .GetImmutableHintValue = NULL,
@@ -81,14 +136,40 @@ int main(void) {
         return 1;
     }
 
-    if (g_last_result != kAuthorizationResultAllow) {
-        fprintf(stderr, "Expected allow result, got %u\n", (unsigned)g_last_result);
+    AuthorizationResult desired = kAuthorizationResultAllow;
+    if (expected_result != NULL) {
+        if (strcmp(expected_result, "deny") == 0) {
+            desired = kAuthorizationResultDeny;
+        } else if (strcmp(expected_result, "userCanceled") == 0) {
+            desired = kAuthorizationResultUserCanceled;
+        }
+    }
+
+    if (g_last_result != desired) {
+        fprintf(stderr, "Expected result %u, got %u\n", (unsigned)desired, (unsigned)g_last_result);
         return 1;
     }
 
     if (g_last_engine != engine) {
         fprintf(stderr, "Engine mismatch after SetResult\n");
         return 1;
+    }
+
+    if (desired == kAuthorizationResultAllow) {
+        if (expected_username != NULL && (!g_context_username_set || strcmp(expected_username, g_context_username) != 0)) {
+            fprintf(stderr, "Expected username context '%s', got '%s'\n", expected_username, g_context_username);
+            return 1;
+        }
+
+        if (expected_password != NULL && (!g_context_password_set || strcmp(expected_password, g_context_password) != 0)) {
+            fprintf(stderr, "Expected password context '%s', got '%s'\n", expected_password, g_context_password);
+            return 1;
+        }
+
+        if (!g_hint_shared_set) {
+            fprintf(stderr, "Expected shared hint to be set for allow result\n");
+            return 1;
+        }
     }
 
     status = pluginInterface->MechanismDestroy(mechanism);

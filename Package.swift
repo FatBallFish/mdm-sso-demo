@@ -50,7 +50,7 @@ let package = Package(
         ),
         .target(
             name: "DemoLoginShellSupport",
-            dependencies: ["DemoShared", "DemoAccountSyncSupport"]
+            dependencies: ["DemoShared", "DemoAccountSyncSupport", "DemoLoginPluginSupport"]
         ),
         .target(
             name: "DemoLoginPluginSupport",
@@ -72,7 +72,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "DemoLoginShell",
-            dependencies: ["DemoLoginShellSupport"],
+            dependencies: ["DemoLoginShellSupport", "DemoLoginPluginSupport"],
             linkerSettings: [
                 .linkedFramework("AppKit"),
                 .linkedFramework("SwiftUI"),

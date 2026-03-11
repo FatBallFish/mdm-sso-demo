@@ -1,12 +1,26 @@
 import AppKit
+import Combine
 import DemoAccountSyncSupport
+import DemoLoginPluginSupport
 import DemoLoginShellSupport
 import SwiftUI
 
+@MainActor
 final class DemoLoginShellAppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow?
+    private var preLoginObserver: AnyCancellable?
+    private let launchOptions = LoginShellLaunchOptions.parse(arguments: CommandLine.arguments)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        switch launchOptions.mode {
+        case .interactive:
+            launchInteractiveDemo()
+        case let .plugin(resultFileURL):
+            launchPluginMode(resultFileURL: resultFileURL)
+        }
+    }
+
+    private func launchInteractiveDemo() {
         let viewModel = LoginViewModel()
         let root = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".demo-sso-state")
         let daemonPath = DemoRuntimeConfiguration.resolveDaemonExecutableURL(
@@ -18,7 +32,7 @@ final class DemoLoginShellAppDelegate: NSObject, NSApplicationDelegate {
             daemonExecutableURL: daemonPath,
             stateRootURL: root
         )
-        let idpClient = DemoIDPHTTPClient(baseURL: URL(string: "http://127.0.0.1:48080/")!)
+        let idpClient = DemoIDPHTTPClient(baseURL: launchOptions.idpBaseURL)
         let coordinator = LoginFlowCoordinator(idpClient: idpClient, accountSync: accountSync)
         let view = NativeLoginShellView(
             viewModel: viewModel,
@@ -32,19 +46,50 @@ final class DemoLoginShellAppDelegate: NSObject, NSApplicationDelegate {
                 await viewModel.createLocalAccount(using: coordinator)
             }
         )
-        let hostingController = NSHostingController(rootView: view)
 
+        showWindow(title: "Demo SSO Login Shell", size: NSSize(width: 560, height: 360), rootView: view)
+    }
+
+    private func launchPluginMode(resultFileURL: URL) {
+        let validator = PluginCredentialValidator(remoteIDP: DemoIDPHTTPClient(baseURL: launchOptions.idpBaseURL))
+        let viewModel = PreLoginPanelViewModel { username, password in
+            try await validator.validate(username: username, password: password)
+        }
+
+        preLoginObserver = viewModel.$completedResult
+            .compactMap { $0 }
+            .sink { [weak self, weak viewModel] result in
+                guard let self, let viewModel else { return }
+                self.finishPluginMode(result: result, password: viewModel.password, resultFileURL: resultFileURL)
+            }
+
+        let view = PluginPreLoginView(viewModel: viewModel)
+        showWindow(title: "Demo SSO Pre-Login", size: NSSize(width: 620, height: 340), rootView: view)
+    }
+
+    private func finishPluginMode(result: PreLoginAuthResult, password: String, resultFileURL: URL) {
+        do {
+            try PreLoginResultFileWriter.write(result: result, password: password, to: resultFileURL)
+            NSApp.terminate(nil)
+        } catch {
+            fputs("Failed to write pre-login result: \(error)\n", stderr)
+            exit(EXIT_FAILURE)
+        }
+    }
+
+    private func showWindow<Content: View>(title: String, size: NSSize, rootView: Content) {
+        let hostingController = NSHostingController(rootView: rootView)
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 360),
+            contentRect: NSRect(x: 0, y: 0, width: size.width, height: size.height),
             styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.center()
-        window.title = "Demo SSO Login Shell"
+        window.title = title
         window.contentViewController = hostingController
         window.makeKeyAndOrderFront(nil)
-
+        window.orderFrontRegardless()
         self.window = window
     }
 }

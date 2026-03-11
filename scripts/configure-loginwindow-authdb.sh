@@ -93,9 +93,9 @@ build_output() {
   if [[ "${found}" -eq 0 ]]; then
     if [[ "${anchor_index}" -ge 0 ]]; then
       mechanisms=(
-        "${mechanisms[@]:0:$((anchor_index + 1))}"
+        "${mechanisms[@]:0:$((anchor_index))}"
         "${MECHANISM}"
-        "${mechanisms[@]:$((anchor_index + 1))}"
+        "${mechanisms[@]:$((anchor_index))}"
       )
     else
       mechanisms+=("${MECHANISM}")

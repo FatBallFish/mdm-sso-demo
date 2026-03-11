@@ -113,7 +113,7 @@
 已经实现：
 
 - 读取当前 `system.login.console`
-- 在 `loginwindow:login` 后插入 `DemoLoginPlugin:login,privileged`
+- 在 `loginwindow:login` 前插入 `DemoLoginPlugin:login,privileged`
 - 生成 backup plist
 - 生成 demo plist
 - 用 backup 恢复
@@ -140,17 +140,18 @@
 
 下面这些能力目前还没有真正完成：
 
-- 真实系统 `LoginWindow` 中弹出完整 SSO UI
-- 真实本地用户创建
-- 真实本地密码修改
+- live 登录链中的“选择已有账户 / 新建账户”交互
+- live 登录链中的真实本地用户创建
+- live 登录链中的真实本地密码修改
 - `SecureToken` 同步
 - `FileVault` 相关流程
 - 安装脚本自动 live 写入 `system.login.console`
+- 本地密码与 SSO 密码不一致时的完整修复链路
 
 换句话说：
 
-- 当前已经能验证“架构链路、打包、安装、变换规则、进程交互”
-- 但还不是一个真正能完全替代 `LoginWindow` 登录体验的成品
+- 当前已经能验证“pre-login 自定义 UI、HTTP 优先鉴权、fallback 鉴权、plugin -> shell -> plugin 回传、authdb 前插”
+- 但 live 登录阶段目前只稳定覆盖“已有本地账户，且使用当前输入密码继续原生登录链”的 demo 场景
 
 ## 4. 建议的测试顺序
 
@@ -364,7 +365,7 @@ bash scripts/tests/uninstall_root_smoke.sh
 1. 读取当前 `system.login.console`
 2. 生成 backup plist
 3. 生成 demo plist
-4. 在 demo plist 中把 `DemoLoginPlugin:login,privileged` 插到 `loginwindow:login` 后面
+4. 在 demo plist 中把 `DemoLoginPlugin:login,privileged` 插到 `loginwindow:login` 前面
 
 ### 10.2 验证 authdb 变换
 
@@ -375,7 +376,7 @@ bash scripts/tests/authdb_transform_smoke.sh
 该测试会检查：
 
 - `DemoLoginPlugin:login,privileged` 已被插入
-- 插入位置在 `loginwindow:login` 之后、`builtin:login-begin` 之前
+- 插入位置在 `loginwindow:login` 之前，并保持在 `builtin:login-begin` 之前
 - 重复执行时不会插入两次
 
 ### 10.3 从 backup 恢复
@@ -453,15 +454,16 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 
 但要注意：
 
-- 当前 live 接入只验证 Authorization plug-in 是否被系统加载
-- 当前系统登录界面仍然会先显示 macOS 原生账号密码输入框
-- 当前 plug-in 会在原生登录链中执行一个安全的 pass-through，允许本地登录继续
-- 这一步不是“完整 SSO 登录界面接管成品”
+- 当前规则会把 `DemoLoginPlugin:login,privileged` 插到 `loginwindow:login` 之前
+- 注销后应先看到自定义 SSO pre-login UI，再继续进入原生登录链
+- 当前 live 场景优先覆盖“已有本地账户”的登录验证
+- 账户绑定、新建本地账户、密码不一致修复、`SecureToken` 仍未接入 live 登录链
 
 如果你期望的是：
 
-- 注销后立即弹出自定义 SSO UI
-- 完全替代原生账号密码输入框
+- 直接在 live 登录中绑定已有账户
+- 直接在 live 登录中创建本地账户
+- 自动完成 SecureToken / FileVault 相关处理
 
 那么当前仓库版本还没有实现到这一阶段。
 
@@ -471,7 +473,9 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 
 - `AuthorizationPluginCreate`
 - `MechanismCreate`
-- `MechanismInvoke allow`
+- `MechanismInvoke showing pre-login shell`
+- `auth_source=http ...` 或 `auth_source=fallback ...`
+- `MechanismInvoke completed result=...`
 - `MechanismDestroy`
 - `PluginDestroy`
 
@@ -497,7 +501,9 @@ sudo log show --last 10m --style compact --predicate '(subsystem == "com.demo.ss
 
 - `AuthorizationPluginCreate`
 - `MechanismCreate`
-- `MechanismInvoke allow`
+- `MechanismInvoke showing pre-login shell`
+- `auth_source=http result=allow` 或 `auth_source=fallback result=allow`
+- `MechanismInvoke completed result=0`
 
 如果规则已写入，但完全看不到这些日志，优先排查：
 
