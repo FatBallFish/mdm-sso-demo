@@ -3,6 +3,7 @@ import Foundation
 public enum DemoAuthError: Error, Equatable, Sendable {
     case invalidCredentials
     case invalidRefreshToken
+    case serviceUnavailable
 }
 
 public final class DemoAuthenticator: @unchecked Sendable {
@@ -15,11 +16,15 @@ public final class DemoAuthenticator: @unchecked Sendable {
     }
 
     public func login(username: String, password: String) throws -> DemoTokenResponse {
-        guard let account = configuration.accounts.first(where: { $0.username == username && $0.password == password }) else {
+        guard let account = matchingAccount(username: username, password: password) else {
             throw DemoAuthError.invalidCredentials
         }
 
         return issueToken(for: account)
+    }
+
+    public func matchingAccount(username: String, password: String) -> DemoAccount? {
+        configuration.accounts.first(where: { $0.username == username && $0.password == password })
     }
 
     public func refresh(refreshToken: String) throws -> DemoTokenResponse {

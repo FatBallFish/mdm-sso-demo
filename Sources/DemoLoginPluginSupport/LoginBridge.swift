@@ -27,4 +27,15 @@ public struct LoginPluginBridge {
             .deny(message: message)
         }
     }
+
+    public func map(preLoginResult: PreLoginAuthResult) -> MechanismDisposition {
+        switch preLoginResult {
+        case let .allow(localShortName, _):
+            .allowLogin(localShortName: localShortName)
+        case let .deny(message):
+            .deny(message: message)
+        case .userCanceled:
+            .deny(message: "User canceled.")
+        }
+    }
 }
