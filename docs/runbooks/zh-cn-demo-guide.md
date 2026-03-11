@@ -438,9 +438,57 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 
 但要注意：
 
-- 当前 plug-in 仍然是骨架
-- 这一步更偏向“机制接入验证”
-- 不是“完整 SSO 登录界面成品”
+- 当前 live 接入只验证 Authorization plug-in 是否被系统加载
+- 当前系统登录界面仍然会先显示 macOS 原生账号密码输入框
+- 当前 plug-in 会在原生登录链中执行一个安全的 pass-through，允许本地登录继续
+- 这一步不是“完整 SSO 登录界面接管成品”
+
+如果你期望的是：
+
+- 注销后立即弹出自定义 SSO UI
+- 完全替代原生账号密码输入框
+
+那么当前仓库版本还没有实现到这一阶段。
+
+### 11.7 观察插件日志
+
+当前 plug-in 会通过 macOS Unified Logging 输出以下关键事件：
+
+- `AuthorizationPluginCreate`
+- `MechanismCreate`
+- `MechanismInvoke allow`
+- `MechanismDestroy`
+- `PluginDestroy`
+
+实时观察：
+
+```bash
+log stream --style compact --level info --predicate 'subsystem == "com.demo.sso.login-plugin"'
+```
+
+查看最近 10 分钟历史：
+
+```bash
+sudo log show --last 10m --style compact --predicate 'subsystem == "com.demo.sso.login-plugin"'
+```
+
+如果你想把系统相关进程一起带上排查，可以用：
+
+```bash
+sudo log show --last 10m --style compact --predicate '(subsystem == "com.demo.sso.login-plugin") OR (process == "authorizationhost") OR (process == "SecurityAgent") OR (process == "loginwindow")'
+```
+
+正常情况下，在一次成功的本地登录实验中，你至少应当能看到：
+
+- `AuthorizationPluginCreate`
+- `MechanismCreate`
+- `MechanismInvoke allow`
+
+如果规则已写入，但完全看不到这些日志，优先排查：
+
+- `DemoLoginPlugin.bundle` 是否已安装到 `/Library/Security/SecurityAgentPlugins/`
+- `system.login.console` 是否真的包含 `DemoLoginPlugin:login,privileged`
+- 是否已经重新注销或重启，让 `loginwindow` 重新走认证链
 
 ## 12. 恢复原生 LoginWindow
 
@@ -459,6 +507,24 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 ```
 
 正常情况下不应再匹配到这一行。
+
+### 12.2.1 如果已经写入 live authdb 且登录流程异常
+
+优先目标是先恢复原生链路：
+
+```bash
+sudo ./scripts/restore-native-loginwindow.sh \
+  --backup-file "/Library/Application Support/DemoSSO/authdb/system.login.console.backup.plist" \
+  --apply-live
+```
+
+如果当前机器已经卡在登录窗口而无法进入桌面，请使用你现有的恢复手段之一执行上面的恢复命令：
+
+- 另一位已登录的管理员用户会话
+- `ssh` 到测试机
+- macOS 恢复模式 / 单用户恢复手段
+
+恢复后再重启或回到登录界面验证。
 
 ### 12.3 卸载系统文件
 
