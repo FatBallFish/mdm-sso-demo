@@ -6,10 +6,12 @@
 #include <fcntl.h>
 #include <os/log.h>
 #include <spawn.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -19,6 +21,7 @@ extern char **environ;
 static const char *kDemoLoginShellDefaultPath = "/Library/Application Support/DemoSSO/bin/DemoLoginShell";
 static const char *kDemoLoginPluginResultTemplate = "/tmp/demo-login-plugin-result.XXXXXX";
 static const char *kDemoLoginPluginIDPDefaultURL = "http://127.0.0.1:48080/";
+static const int kDemoLoginShellTimeoutSecondsDefault = 15;
 
 typedef struct DemoHelperDecision {
     AuthorizationResult result;
@@ -95,6 +98,21 @@ static char *DemoCreateResultPath(void) {
 
     close(fd);
     return path;
+}
+
+static int DemoReadShellTimeoutSeconds(void) {
+    const char *value = getenv("DEMO_LOGIN_SHELL_TIMEOUT_SECONDS");
+    if (value == NULL || value[0] == '\0') {
+        return kDemoLoginShellTimeoutSecondsDefault;
+    }
+
+    char *end = NULL;
+    long parsed = strtol(value, &end, 10);
+    if (end == value || parsed <= 0 || parsed > INT32_MAX) {
+        return kDemoLoginShellTimeoutSecondsDefault;
+    }
+
+    return (int)parsed;
 }
 
 static OSStatus DemoSetStringContextValue(
@@ -386,10 +404,34 @@ static OSStatus DemoRunLoginShell(
         resultPath
     );
 
+    int timeoutSeconds = DemoReadShellTimeoutSeconds();
+    time_t startedAt = time(NULL);
     int waitStatus = 0;
-    if (waitpid(pid, &waitStatus, 0) < 0) {
-        os_log_error(DemoPluginLogger(), "MechanismInvoke failed waiting for login shell pid=%d", pid);
-        return errAuthorizationInternal;
+
+    while (1) {
+        pid_t waitResult = waitpid(pid, &waitStatus, WNOHANG);
+        if (waitResult == pid) {
+            break;
+        }
+
+        if (waitResult < 0) {
+            os_log_error(DemoPluginLogger(), "MechanismInvoke failed waiting for login shell pid=%d", pid);
+            return errAuthorizationInternal;
+        }
+
+        if ((time(NULL) - startedAt) >= timeoutSeconds) {
+            os_log_error(
+                DemoPluginLogger(),
+                "MechanismInvoke timed out waiting for login shell pid=%d timeout=%d",
+                pid,
+                timeoutSeconds
+            );
+            kill(pid, SIGKILL);
+            waitpid(pid, &waitStatus, 0);
+            return errAuthorizationInternal;
+        }
+
+        usleep(100000);
     }
 
     if (!WIFEXITED(waitStatus) || WEXITSTATUS(waitStatus) != 0) {

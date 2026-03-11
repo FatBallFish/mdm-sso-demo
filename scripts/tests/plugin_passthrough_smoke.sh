@@ -31,3 +31,9 @@ DEMO_LOGIN_SHELL_PATH="${ROOT_DIR}/scripts/tests/plugin_shell_helper.sh" \
 PLUGIN_HELPER_EXIT_CODE="1" \
 EXPECT_RESULT="allow" \
   "${OUT_BIN}"
+
+DEMO_LOGIN_SHELL_PATH="${ROOT_DIR}/scripts/tests/plugin_shell_helper.sh" \
+PLUGIN_HELPER_SLEEP_SECONDS="3" \
+DEMO_LOGIN_SHELL_TIMEOUT_SECONDS="1" \
+EXPECT_RESULT="allow" \
+  "${OUT_BIN}"

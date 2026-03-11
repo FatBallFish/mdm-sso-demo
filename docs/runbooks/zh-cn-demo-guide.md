@@ -113,7 +113,7 @@
 已经实现：
 
 - 读取当前 `system.login.console`
-- 在 `loginwindow:login` 后插入 `DemoLoginPlugin:login`
+- 在 `loginwindow:login` 前插入 `DemoLoginPlugin:login`
 - 生成 backup plist
 - 生成 demo plist
 - 用 backup 恢复
@@ -475,6 +475,9 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 - `MechanismCreate`
 - `MechanismInvoke showing pre-login shell`
 - `MechanismInvoke spawned login shell`
+- `launch_mode=plugin ...`
+- `appkit pre-login window shown`
+- `pre-login result written path=...`
 - `MechanismInvoke completed result=...`
 - `MechanismDestroy`
 - `PluginDestroy`
@@ -503,10 +506,14 @@ sudo log show --last 10m --style compact --predicate '(subsystem == "com.demo.ss
 - `MechanismCreate`
 - `MechanismInvoke showing pre-login shell`
 - `MechanismInvoke spawned login shell`
+- `launch_mode=plugin ...`
+- `appkit pre-login window shown`
+- `pre-login result written path=...`
 - `MechanismInvoke completed result=0`
 
 如果你看到：
 
+- `MechanismInvoke timed out waiting for login shell`
 - `MechanismInvoke helper flow failed`
 - `MechanismInvoke pre-login shell unavailable, allowing native login`
 

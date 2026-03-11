@@ -4,18 +4,23 @@ import DemoAccountSyncSupport
 import DemoLoginPluginSupport
 import DemoLoginShellSupport
 import SwiftUI
+import os
 
 @MainActor
 final class DemoLoginShellAppDelegate: NSObject, NSApplicationDelegate {
     private var window: NSWindow?
+    private var pluginWindowController: PluginPreLoginWindowController?
     private var preLoginObserver: AnyCancellable?
     private let launchOptions = LoginShellLaunchOptions.parse(arguments: CommandLine.arguments)
+    private let logger = Logger(subsystem: "com.demo.sso.login-plugin", category: "prelogin-shell")
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         switch launchOptions.mode {
         case .interactive:
+            logger.info("launch_mode=interactive")
             launchInteractiveDemo()
         case let .plugin(resultFileURL):
+            logger.info("launch_mode=plugin result_file=\(resultFileURL.path, privacy: .public)")
             launchPluginMode(resultFileURL: resultFileURL)
         }
     }
@@ -63,12 +68,15 @@ final class DemoLoginShellAppDelegate: NSObject, NSApplicationDelegate {
                 self.finishPluginMode(result: result, password: viewModel.password, resultFileURL: resultFileURL)
             }
 
-        let view = PluginPreLoginView(viewModel: viewModel)
-        showWindow(title: "Demo SSO Pre-Login", size: NSSize(width: 620, height: 340), rootView: view)
+        let controller = PluginPreLoginWindowController(viewModel: viewModel)
+        pluginWindowController = controller
+        controller.showWindow(nil)
+        window = controller.window
     }
 
     private func finishPluginMode(result: PreLoginAuthResult, password: String, resultFileURL: URL) {
         do {
+            logger.info("plugin_mode_complete action=\(String(describing: result), privacy: .public)")
             try PreLoginResultFileWriter.write(result: result, password: password, to: resultFileURL)
             NSApp.terminate(nil)
         } catch {
