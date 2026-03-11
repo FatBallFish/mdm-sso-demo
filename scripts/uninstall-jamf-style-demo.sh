@@ -33,7 +33,7 @@ AUTHDB_ROOT="${APP_SUPPORT_ROOT}/authdb"
 if [[ "${DRY_RUN}" -eq 1 ]]; then
   echo "Would restore native loginwindow behavior"
   echo "Would remove ${PLUGIN_BUNDLE}"
-  echo "Would remove ${APP_SUPPORT_ROOT}/bin, ${APP_SUPPORT_ROOT}/config, and ${AUTHDB_ROOT}"
+  echo "Would remove ${APP_SUPPORT_ROOT}/bin (including DemoLoginShell.app), ${APP_SUPPORT_ROOT}/config, and ${AUTHDB_ROOT}"
   if [[ "${KEEP_STATE}" -eq 1 ]]; then
     echo "Would preserve ${APP_SUPPORT_ROOT}/state"
   else

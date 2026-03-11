@@ -104,6 +104,7 @@ final class DemoLoginShellAppDelegate: NSObject, NSApplicationDelegate {
 }
 
 let app = NSApplication.shared
+configurePreLoginApplication(app)
 let delegate = DemoLoginShellAppDelegate()
 app.setActivationPolicy(.regular)
 app.delegate = delegate

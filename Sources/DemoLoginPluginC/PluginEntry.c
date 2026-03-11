@@ -18,7 +18,7 @@
 
 extern char **environ;
 
-static const char *kDemoLoginShellDefaultPath = "/Library/Application Support/DemoSSO/bin/DemoLoginShell";
+static const char *kDemoLoginShellDefaultPath = "/Library/Application Support/DemoSSO/bin/DemoLoginShell.app/Contents/MacOS/DemoLoginShell";
 static const char *kDemoLoginPluginResultTemplate = "/tmp/demo-login-plugin-result.XXXXXX";
 static const char *kDemoLoginPluginIDPDefaultURL = "http://127.0.0.1:48080/";
 static const int kDemoLoginShellTimeoutSecondsDefault = 15;

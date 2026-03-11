@@ -39,7 +39,9 @@ CONFIG_ROOT="${APP_SUPPORT_ROOT}/config"
 STATE_ROOT="${APP_SUPPORT_ROOT}/state"
 AUTHDB_ROOT="${APP_SUPPORT_ROOT}/authdb"
 DIST_ROOT="${DEMO_PLUGIN_OUTPUT_ROOT:-${HOME}/Library/Caches/DemoSSO/plugin-dist}"
+LOGIN_SHELL_DIST_ROOT="${DEMO_LOGIN_SHELL_OUTPUT_ROOT:-${HOME}/Library/Caches/DemoSSO/login-shell-dist}"
 PLUGIN_BUNDLE_PATH="${DIST_ROOT}/DemoLoginPlugin.bundle"
+LOGIN_SHELL_APP_PATH="${LOGIN_SHELL_DIST_ROOT}/DemoLoginShell.app"
 
 run_swift_build() {
   mkdir -p "${ROOT_DIR}/.home" "${ROOT_DIR}/.swiftpm-cache" "${ROOT_DIR}/.cache/clang" "${SWIFTPM_SCRATCH_ROOT}"
@@ -74,8 +76,9 @@ copy_file() {
 if [[ "${DRY_RUN}" -eq 1 ]]; then
   echo "Would build Swift executables with swift build"
   echo "Would build DemoLoginPlugin.bundle under ${DIST_ROOT}"
+  echo "Would build DemoLoginShell.app under ${LOGIN_SHELL_DIST_ROOT}"
   echo "Would copy LoginPlugin bundle into ${PLUGIN_ROOT}/"
-  echo "Would install DemoAccountSyncDaemon, DemoLoginBroker, DemoLoginShell under ${BIN_ROOT}/"
+  echo "Would install DemoAccountSyncDaemon, DemoLoginBroker, and DemoLoginShell.app under ${BIN_ROOT}/"
   echo "Would write demo-idp.json into ${CONFIG_ROOT}/"
   echo "Would create state directory ${STATE_ROOT}/"
   if [[ "${ENABLE_AUTHDB}" -eq 1 ]]; then
@@ -88,14 +91,16 @@ if [[ "${DRY_RUN}" -eq 1 ]]; then
 fi
 
 run_swift_build
-"${ROOT_DIR}/scripts/build-login-plugin-bundle.sh" --output-root "${DIST_ROOT}" >/dev/null
 BUILD_BIN_ROOT="$(swift_build_bin_root)"
+"${ROOT_DIR}/scripts/build-login-plugin-bundle.sh" --output-root "${DIST_ROOT}" >/dev/null
+"${ROOT_DIR}/scripts/build-login-shell-app.sh" --output-root "${LOGIN_SHELL_DIST_ROOT}" --bin-root "${BUILD_BIN_ROOT}" >/dev/null
 
 mkdir -p "${PLUGIN_ROOT}" "${BIN_ROOT}" "${CONFIG_ROOT}" "${STATE_ROOT}" "${AUTHDB_ROOT}"
 ditto "${PLUGIN_BUNDLE_PATH}" "${PLUGIN_ROOT}/DemoLoginPlugin.bundle"
 copy_file "${BUILD_BIN_ROOT}/DemoAccountSyncDaemon" "${BIN_ROOT}/DemoAccountSyncDaemon"
 copy_file "${BUILD_BIN_ROOT}/DemoLoginBroker" "${BIN_ROOT}/DemoLoginBroker"
-copy_file "${BUILD_BIN_ROOT}/DemoLoginShell" "${BIN_ROOT}/DemoLoginShell"
+rm -rf "${BIN_ROOT}/DemoLoginShell.app"
+ditto "${LOGIN_SHELL_APP_PATH}" "${BIN_ROOT}/DemoLoginShell.app"
 install -m 0644 "${ROOT_DIR}/configs/demo-idp.json" "${CONFIG_ROOT}/demo-idp.json"
 
 if [[ "${ENABLE_AUTHDB}" -eq 1 ]]; then
