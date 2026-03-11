@@ -15,6 +15,7 @@ typedef struct DemoMechanismContext {
     DemoPluginContext *plugin;
     AuthorizationEngineRef engine;
     void *loginViewHandle;
+    int loginViewFailed;
 } DemoMechanismContext;
 
 static os_log_t DemoPluginLogger(void) {
@@ -188,6 +189,7 @@ static OSStatus DemoMechanismCreate(
     context->plugin = (DemoPluginContext *)plugin;
     context->engine = engine;
     context->loginViewHandle = NULL;
+    context->loginViewFailed = 0;
     *mechanism = context;
 
     os_log_info(
@@ -219,20 +221,29 @@ static OSStatus DemoMechanismInvoke(AuthorizationMechanismRef mechanism) {
         return DemoPluginRunTestMode(context, testMode);
     }
 
+    if (context->loginViewFailed) {
+        os_log_info(DemoPluginLogger(), "MechanismInvoke pre-login view unavailable, allowing native login");
+        return DemoPluginSetAuthorizationResult(callbacks, context->engine, kAuthorizationResultAllow);
+    }
+
     if (context->loginViewHandle == NULL) {
         context->loginViewHandle = DemoPluginCreateLoginView(callbacks, context->engine);
     }
 
     if (context->loginViewHandle == NULL) {
+        context->loginViewFailed = 1;
         os_log_error(DemoPluginLogger(), "MechanismInvoke failed creating login view");
-        return DemoPluginSetAuthorizationResult(callbacks, context->engine, kAuthorizationResultDeny);
+        return DemoPluginSetAuthorizationResult(callbacks, context->engine, kAuthorizationResultAllow);
     }
 
     os_log_info(DemoPluginLogger(), "MechanismInvoke showing pre-login view engine=%p mechanism=%p", context->engine, mechanism);
     OSStatus status = DemoPluginDisplayLoginView(context->loginViewHandle);
     if (status != errAuthorizationSuccess) {
+        context->loginViewFailed = 1;
+        DemoPluginDestroyLoginView(context->loginViewHandle);
+        context->loginViewHandle = NULL;
         os_log_error(DemoPluginLogger(), "MechanismInvoke displayView failed status=%d", (int)status);
-        return DemoPluginSetAuthorizationResult(callbacks, context->engine, kAuthorizationResultDeny);
+        return DemoPluginSetAuthorizationResult(callbacks, context->engine, kAuthorizationResultAllow);
     }
 
     // The view completes the mechanism asynchronously when the user submits or cancels.

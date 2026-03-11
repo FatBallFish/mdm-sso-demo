@@ -166,7 +166,7 @@ int main(void) {
             return 1;
         }
 
-        if (!g_hint_shared_set) {
+        if ((expected_username != NULL || expected_password != NULL) && !g_hint_shared_set) {
             fprintf(stderr, "Expected shared hint to be set for allow result\n");
             return 1;
         }

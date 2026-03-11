@@ -32,7 +32,7 @@ You can validate:
 - account and token data contracts
 - bundle packaging and staged filesystem installation layout
 - how the live `system.login.console` rule would be transformed for this plug-in
-- that the plug-in can render a custom pre-login view before `loginwindow:login`
+- that the plug-in can render a custom SSO view inside the LoginWindow-hosted login flow
 - that successful demo SSO validation can pass a local short name and password into the native login chain
 - the target system paths and uninstall flow shape
 

@@ -113,7 +113,7 @@
 已经实现：
 
 - 读取当前 `system.login.console`
-- 在 `loginwindow:login` 前插入 `DemoLoginPlugin:login`
+- 在 `loginwindow:login` 后插入 `DemoLoginPlugin:login`
 - 生成 backup plist
 - 生成 demo plist
 - 用 backup 恢复
@@ -151,7 +151,7 @@
 换句话说：
 
 - 当前已经能验证“pre-login 自定义 UI、HTTP 优先鉴权、fallback 鉴权、plugin -> shell -> plugin 回传、authdb 前插”
-- 但 live 登录阶段目前只稳定覆盖“已有本地账户，且使用当前输入密码继续原生登录链”的 demo 场景
+- 但 live 登录阶段目前只稳定覆盖“在系统登录宿主里展示自定义 SSO 视图，以及已有本地账户继续原生登录链”的 demo 场景
 
 ## 4. 建议的测试顺序
 
@@ -376,7 +376,7 @@ bash scripts/tests/authdb_transform_smoke.sh
 该测试会检查：
 
 - `DemoLoginPlugin:login` 已被插入
-- 插入位置在 `loginwindow:login` 之前，并保持在 `builtin:login-begin` 之前
+- 插入位置在 `loginwindow:login` 之后，并保持在 `builtin:login-begin` 之前
 - 重复执行时不会插入两次
 
 ### 10.3 从 backup 恢复
@@ -454,8 +454,8 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 
 但要注意：
 
-- 当前规则会把 `DemoLoginPlugin:login` 插到 `loginwindow:login` 之前
-- 注销后应先看到自定义 SSO pre-login UI，再继续进入原生登录链
+- 当前规则会把 `DemoLoginPlugin:login` 插到 `loginwindow:login` 之后
+- 注销后先进入系统登录宿主，再由 plug-in 在宿主中显示自定义 SSO 视图
 - 当前 live 场景优先覆盖“已有本地账户”的登录验证
 - 账户绑定、新建本地账户、密码不一致修复、`SecureToken` 仍未接入 live 登录链
 
@@ -504,6 +504,13 @@ sudo log show --last 10m --style compact --predicate '(subsystem == "com.demo.ss
 - `MechanismInvoke showing pre-login view`
 - `auth_source=http result=allow` 或 `auth_source=fallback result=allow`
 - `MechanismInvoke completed result=0`
+
+如果你看到：
+
+- `MechanismInvoke failed creating login view`
+- `MechanismInvoke completed result=0`
+
+说明 plug-in 已经走了安全回退，放行原生登录链，避免再次把机器卡死。此时优先检查 authdb 规则是否还是旧的前插版本。
 
 如果规则已写入，但完全看不到这些日志，优先排查：
 

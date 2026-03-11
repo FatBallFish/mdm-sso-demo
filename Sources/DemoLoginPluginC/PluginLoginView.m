@@ -252,6 +252,11 @@ static NSString * const DemoPluginDefaultIDPBaseURL = @"http://127.0.0.1:48080/"
 @end
 
 void *DemoPluginCreateLoginView(const AuthorizationCallbacks *callbacks, AuthorizationEngineRef engine) {
+    NSString *forcedFailure = NSProcessInfo.processInfo.environment[@"DEMO_PLUGIN_FORCE_VIEW_CREATE_FAILURE"];
+    if (forcedFailure.length > 0) {
+        return NULL;
+    }
+
     DemoAuthorizationLoginView *view = [[DemoAuthorizationLoginView alloc] initWithCallbacks:callbacks andEngineRef:engine];
     return (__bridge_retained void *)view;
 }

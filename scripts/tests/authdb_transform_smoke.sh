@@ -21,7 +21,7 @@ LOGIN_LINE="$(grep -n "loginwindow:login" "${OUTPUT_PLIST}" | head -n1 | cut -d:
 PLUGIN_LINE="$(grep -n "DemoLoginPlugin:login" "${OUTPUT_PLIST}" | head -n1 | cut -d: -f1)"
 BEGIN_LINE="$(grep -n "builtin:login-begin" "${OUTPUT_PLIST}" | head -n1 | cut -d: -f1)"
 
-[[ "${PLUGIN_LINE}" -lt "${LOGIN_LINE}" ]]
+[[ "${LOGIN_LINE}" -lt "${PLUGIN_LINE}" ]]
 [[ "${PLUGIN_LINE}" -lt "${BEGIN_LINE}" ]]
 
 "${ROOT_DIR}/scripts/configure-loginwindow-authdb.sh" \
