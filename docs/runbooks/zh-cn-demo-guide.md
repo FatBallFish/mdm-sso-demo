@@ -113,7 +113,7 @@
 已经实现：
 
 - 读取当前 `system.login.console`
-- 在 `loginwindow:login` 前插入 `DemoLoginPlugin:login,privileged`
+- 在 `loginwindow:login` 前插入 `DemoLoginPlugin:login`
 - 生成 backup plist
 - 生成 demo plist
 - 用 backup 恢复
@@ -365,7 +365,7 @@ bash scripts/tests/uninstall_root_smoke.sh
 1. 读取当前 `system.login.console`
 2. 生成 backup plist
 3. 生成 demo plist
-4. 在 demo plist 中把 `DemoLoginPlugin:login,privileged` 插到 `loginwindow:login` 前面
+4. 在 demo plist 中把 `DemoLoginPlugin:login` 插到 `loginwindow:login` 前面
 
 ### 10.2 验证 authdb 变换
 
@@ -375,7 +375,7 @@ bash scripts/tests/authdb_transform_smoke.sh
 
 该测试会检查：
 
-- `DemoLoginPlugin:login,privileged` 已被插入
+- `DemoLoginPlugin:login` 已被插入
 - 插入位置在 `loginwindow:login` 之前，并保持在 `builtin:login-begin` 之前
 - 重复执行时不会插入两次
 
@@ -439,7 +439,7 @@ sudo security authorizationdb write system.login.console < "/Library/Application
 ### 11.5 校验是否写入成功
 
 ```bash
-security authorizationdb read system.login.console | grep "DemoLoginPlugin:login,privileged"
+security authorizationdb read system.login.console | grep "DemoLoginPlugin:login"
 ```
 
 如果有输出，说明规则已写入。
@@ -454,7 +454,7 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 
 但要注意：
 
-- 当前规则会把 `DemoLoginPlugin:login,privileged` 插到 `loginwindow:login` 之前
+- 当前规则会把 `DemoLoginPlugin:login` 插到 `loginwindow:login` 之前
 - 注销后应先看到自定义 SSO pre-login UI，再继续进入原生登录链
 - 当前 live 场景优先覆盖“已有本地账户”的登录验证
 - 账户绑定、新建本地账户、密码不一致修复、`SecureToken` 仍未接入 live 登录链
@@ -473,7 +473,7 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 
 - `AuthorizationPluginCreate`
 - `MechanismCreate`
-- `MechanismInvoke showing pre-login shell`
+- `MechanismInvoke showing pre-login view`
 - `auth_source=http ...` 或 `auth_source=fallback ...`
 - `MechanismInvoke completed result=...`
 - `MechanismDestroy`
@@ -501,14 +501,14 @@ sudo log show --last 10m --style compact --predicate '(subsystem == "com.demo.ss
 
 - `AuthorizationPluginCreate`
 - `MechanismCreate`
-- `MechanismInvoke showing pre-login shell`
+- `MechanismInvoke showing pre-login view`
 - `auth_source=http result=allow` 或 `auth_source=fallback result=allow`
 - `MechanismInvoke completed result=0`
 
 如果规则已写入，但完全看不到这些日志，优先排查：
 
 - `DemoLoginPlugin.bundle` 是否已安装到 `/Library/Security/SecurityAgentPlugins/`
-- `system.login.console` 是否真的包含 `DemoLoginPlugin:login,privileged`
+- `system.login.console` 是否真的包含 `DemoLoginPlugin:login`
 - 是否已经重新注销或重启，让 `loginwindow` 重新走认证链
 
 ## 12. 恢复原生 LoginWindow
@@ -524,7 +524,7 @@ sudo ./scripts/restore-native-loginwindow.sh \
 ### 12.2 检查恢复结果
 
 ```bash
-security authorizationdb read system.login.console | grep "DemoLoginPlugin:login,privileged"
+security authorizationdb read system.login.console | grep "DemoLoginPlugin:login"
 ```
 
 正常情况下不应再匹配到这一行。

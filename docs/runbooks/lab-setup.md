@@ -105,7 +105,7 @@ It does not yet modify the system authorization database unless that step is add
   --backup-file /tmp/system.login.console.backup.plist
 ```
 
-This reads the current `system.login.console` rule, inserts `DemoLoginPlugin:login,privileged` before `loginwindow:login`, and writes:
+This reads the current `system.login.console` rule, inserts `DemoLoginPlugin:login` before `loginwindow:login`, and writes:
 
 - a backup plist
 - a transformed plist ready for a later `security authorizationdb write`
@@ -130,4 +130,4 @@ The current install script uses this flow when `--enable-authdb` is supplied, bu
 
 ## Next implementation gap
 
-The current revision does not yet install a real LoginWindow plug-in bundle or privileged daemon. The plug-in target compiles, but it is not yet packaged into `/Library/Security/SecurityAgentPlugins/` or wired into the login authentication database.
+The current revision now packages a real LoginWindow plug-in bundle and can stage authdb integration files, but it still does not complete live account binding, local account creation, SecureToken, or FileVault follow-up.

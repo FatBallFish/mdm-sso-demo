@@ -2,7 +2,7 @@
 set -euo pipefail
 
 RULE="system.login.console"
-MECHANISM="DemoLoginPlugin:login,privileged"
+MECHANISM="DemoLoginPlugin:login"
 SOURCE_PLIST=""
 OUTPUT_PLIST=""
 BACKUP_FILE=""
