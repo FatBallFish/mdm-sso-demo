@@ -47,6 +47,12 @@ public final class PluginPreLoginWindowController: NSWindowController, NSTextFie
         logger.info("appkit pre-login window shown")
     }
 
+    public func controlTextDidBeginEditing(_ obj: Notification) {
+        if let fieldEditor = obj.userInfo?["NSFieldEditor"] as? NSTextView {
+            configureFieldEditor(fieldEditor)
+        }
+    }
+
     public func controlTextDidChange(_ obj: Notification) {
         syncViewModelFromFields()
         syncControlState()
@@ -82,9 +88,11 @@ public final class PluginPreLoginWindowController: NSWindowController, NSTextFie
 
         usernameField.placeholderString = "SSO username"
         usernameField.delegate = self
+        configureTextField(usernameField)
 
         passwordField.placeholderString = "SSO password"
         passwordField.delegate = self
+        configureTextField(passwordField)
 
         statusLabel.font = .systemFont(ofSize: 12)
         statusLabel.textColor = .secondaryLabelColor
@@ -173,6 +181,30 @@ public final class PluginPreLoginWindowController: NSWindowController, NSTextFie
         } else {
             statusLabel.stringValue = Self.defaultStatusText
             statusLabel.textColor = .secondaryLabelColor
+        }
+    }
+
+    private func configureTextField(_ textField: NSTextField) {
+        textField.isAutomaticTextCompletionEnabled = false
+        textField.allowsCharacterPickerTouchBarItem = false
+        if #available(macOS 15.2, *) {
+            textField.allowsWritingTools = false
+        }
+    }
+
+    private func configureFieldEditor(_ fieldEditor: NSTextView) {
+        fieldEditor.isAutomaticTextCompletionEnabled = false
+        fieldEditor.isContinuousSpellCheckingEnabled = false
+        fieldEditor.isGrammarCheckingEnabled = false
+        fieldEditor.smartInsertDeleteEnabled = false
+        fieldEditor.isAutomaticQuoteSubstitutionEnabled = false
+        fieldEditor.isAutomaticDashSubstitutionEnabled = false
+        fieldEditor.isAutomaticTextReplacementEnabled = false
+        fieldEditor.isAutomaticSpellingCorrectionEnabled = false
+        fieldEditor.isAutomaticLinkDetectionEnabled = false
+        fieldEditor.isAutomaticDataDetectionEnabled = false
+        if #available(macOS 15.0, *) {
+            fieldEditor.writingToolsBehavior = .none
         }
     }
 }
