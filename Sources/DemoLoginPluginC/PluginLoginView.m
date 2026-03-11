@@ -5,16 +5,13 @@
 #import <SecurityInterface/SFAuthorizationPluginView.h>
 #import <os/log.h>
 
-static NSString * const DemoPluginDefaultIDPBaseURL = @"http://127.0.0.1:48080/";
-
 @interface DemoAuthorizationLoginView : SFAuthorizationPluginView
 @property(nonatomic, strong) NSView *containerView;
 @property(nonatomic, strong) NSTextField *titleLabel;
 @property(nonatomic, strong) NSTextField *subtitleLabel;
-@property(nonatomic, strong) NSTextField *usernameField;
-@property(nonatomic, strong) NSSecureTextField *passwordField;
 @property(nonatomic, strong) NSTextField *statusLabel;
-@property(nonatomic, strong) NSButton *loginButton;
+@property(nonatomic, strong) NSButton *successButton;
+@property(nonatomic, strong) NSButton *failureButton;
 @property(nonatomic, strong) NSButton *cancelButton;
 @end
 
@@ -29,28 +26,34 @@ static NSString * const DemoPluginDefaultIDPBaseURL = @"http://127.0.0.1:48080/"
 }
 
 - (void)buildViewHierarchy {
-    self.containerView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 394, 188)];
+    self.containerView = [[NSView alloc] initWithFrame:NSMakeRect(0, 0, 394, 220)];
 
     self.titleLabel = [self labelWithString:@"Demo SSO Sign In" font:[NSFont boldSystemFontOfSize:20.0] color:NSColor.labelColor];
-    self.titleLabel.frame = NSMakeRect(0, 150, 394, 24);
+    self.titleLabel.frame = NSMakeRect(0, 182, 394, 24);
     [self.containerView addSubview:self.titleLabel];
 
-    self.subtitleLabel = [self labelWithString:@"Use your demo SSO account before macOS continues the local login flow." font:[NSFont systemFontOfSize:12.0] color:NSColor.secondaryLabelColor];
-    self.subtitleLabel.frame = NSMakeRect(0, 128, 394, 18);
+    self.subtitleLabel = [self labelWithString:@"Use the buttons below to verify that the plug-in can allow, deny, or return to the native macOS login screen." font:[NSFont systemFontOfSize:12.0] color:NSColor.secondaryLabelColor];
+    self.subtitleLabel.frame = NSMakeRect(0, 144, 394, 34);
+    self.subtitleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+    self.subtitleLabel.maximumNumberOfLines = 2;
     [self.containerView addSubview:self.subtitleLabel];
 
-    self.usernameField = [[NSTextField alloc] initWithFrame:NSMakeRect(0, 88, 394, 24)];
-    self.usernameField.placeholderString = @"SSO username";
-    [self.containerView addSubview:self.usernameField];
+    self.successButton = [self actionButtonWithTitle:@"Validate Success" action:@selector(validateSuccessPressed:)];
+    self.successButton.frame = NSMakeRect(0, 102, 180, 30);
+    [self.containerView addSubview:self.successButton];
 
-    self.passwordField = [[NSSecureTextField alloc] initWithFrame:NSMakeRect(0, 54, 394, 24)];
-    self.passwordField.placeholderString = @"SSO password";
-    [self.containerView addSubview:self.passwordField];
+    self.failureButton = [self actionButtonWithTitle:@"Validate Failure" action:@selector(validateFailurePressed:)];
+    self.failureButton.frame = NSMakeRect(0, 66, 180, 30);
+    [self.containerView addSubview:self.failureButton];
 
-    self.statusLabel = [self labelWithString:@"The plugin checks the local HTTP IdP first, then falls back to seeded demo accounts." font:[NSFont systemFontOfSize:11.0] color:NSColor.secondaryLabelColor];
-    self.statusLabel.frame = NSMakeRect(0, 20, 394, 26);
+    self.cancelButton = [self actionButtonWithTitle:@"Back To macOS Login" action:@selector(cancelPressed:)];
+    self.cancelButton.frame = NSMakeRect(0, 30, 180, 30);
+    [self.containerView addSubview:self.cancelButton];
+
+    self.statusLabel = [self labelWithString:@"Choose a demo action. No text input is used in this loginwindow-hosted view." font:[NSFont systemFontOfSize:11.0] color:NSColor.secondaryLabelColor];
+    self.statusLabel.frame = NSMakeRect(196, 28, 198, 76);
     self.statusLabel.lineBreakMode = NSLineBreakByWordWrapping;
-    self.statusLabel.maximumNumberOfLines = 2;
+    self.statusLabel.maximumNumberOfLines = 4;
     [self.containerView addSubview:self.statusLabel];
 }
 
@@ -66,10 +69,19 @@ static NSString * const DemoPluginDefaultIDPBaseURL = @"http://127.0.0.1:48080/"
     return label;
 }
 
+- (NSButton *)actionButtonWithTitle:(NSString *)title action:(SEL)action {
+    NSButton *button = [[NSButton alloc] initWithFrame:NSZeroRect];
+    button.title = title;
+    button.target = self;
+    button.action = action;
+    button.bezelStyle = NSBezelStyleRounded;
+    return button;
+}
+
 - (void)didActivate {
     [super didActivate];
-    [self setButton:SFButtonTypeLogin enabled:YES];
-    [self setButton:SFButtonTypeCancel enabled:YES];
+    [self setButton:SFButtonTypeLogin enabled:NO];
+    [self setButton:SFButtonTypeCancel enabled:NO];
 }
 
 - (NSView *)viewForType:(SFViewType)inType {
@@ -78,152 +90,49 @@ static NSString * const DemoPluginDefaultIDPBaseURL = @"http://127.0.0.1:48080/"
 }
 
 - (NSResponder *)firstResponder {
-    return self.usernameField;
+    return self.successButton;
 }
 
 - (NSView *)firstKeyView {
-    return self.usernameField;
+    return self.successButton;
 }
 
 - (NSView *)lastKeyView {
-    return self.passwordField;
+    return self.cancelButton;
 }
 
 - (void)setEnabled:(BOOL)inEnabled {
-    [self.usernameField setEnabled:inEnabled];
-    [self.passwordField setEnabled:inEnabled];
-    [self setButton:SFButtonTypeLogin enabled:inEnabled];
-    [self setButton:SFButtonTypeCancel enabled:inEnabled];
+    [self.successButton setEnabled:inEnabled];
+    [self.failureButton setEnabled:inEnabled];
+    [self.cancelButton setEnabled:inEnabled];
+    [self setButton:SFButtonTypeLogin enabled:NO];
+    [self setButton:SFButtonTypeCancel enabled:NO];
 }
 
-- (void)buttonPressed:(SFButtonType)inButtonType {
-    switch (inButtonType) {
-        case SFButtonTypeCancel:
-            DemoPluginSetAuthorizationResult([self callbacks], [self engineRef], kAuthorizationResultUserCanceled);
-            return;
-        case SFButtonTypeLogin:
-            break;
-    }
-
-    NSString *username = self.usernameField.stringValue ?: @"";
-    NSString *password = self.passwordField.stringValue ?: @"";
-    if (username.length == 0 || password.length == 0) {
-        [self showError:@"Enter both username and password."];
-        return;
-    }
-
+- (void)validateSuccessPressed:(id)sender {
+    (void)sender;
+    os_log_info([self logger], "pre-login validate success pressed");
     [self setEnabled:NO];
     self.statusLabel.textColor = NSColor.secondaryLabelColor;
-    self.statusLabel.stringValue = @"Authenticating...";
-
-    [self validateUsername:username password:password];
+    self.statusLabel.stringValue = @"Applying demo credentials...";
+    [self completeAllowWithLocalShortName:@"demouser" password:@"DemoPass123!"];
 }
 
-- (void)validateUsername:(NSString *)username password:(NSString *)password {
-    NSURL *baseURL = [self idpBaseURL];
-    NSURL *healthURL = [baseURL URLByAppendingPathComponent:@"api/health"];
-    NSURLSession *session = [NSURLSession sharedSession];
-    os_log_info([self logger], "pre-login auth attempt username=%{public}s", username.UTF8String);
-
-    [[session dataTaskWithURL:healthURL completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-        (void)data;
-        BOOL healthOK = NO;
-        if (error == nil && [response isKindOfClass:[NSHTTPURLResponse class]]) {
-            healthOK = (((NSHTTPURLResponse *)response).statusCode == 200);
-        }
-
-        if (healthOK) {
-            os_log_info([self logger], "auth_source=http health=ok username=%{public}s", username.UTF8String);
-            [self performHTTPLoginWithSession:session baseURL:baseURL username:username password:password];
-        } else {
-            os_log_info([self logger], "auth_source=fallback reason=service_unavailable username=%{public}s", username.UTF8String);
-            [self completeWithFallbackForUsername:username password:password];
-        }
-    }] resume];
+- (void)validateFailurePressed:(id)sender {
+    (void)sender;
+    os_log_info([self logger], "pre-login validate failure pressed");
+    [self showError:@"Demo validation failed."];
 }
 
-- (void)performHTTPLoginWithSession:(NSURLSession *)session
-                            baseURL:(NSURL *)baseURL
-                           username:(NSString *)username
-                           password:(NSString *)password {
-    NSURL *loginURL = [baseURL URLByAppendingPathComponent:@"api/login"];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:loginURL];
-    request.HTTPMethod = @"POST";
-    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
-    NSData *body = [NSJSONSerialization dataWithJSONObject:@{
-        @"username": username,
-        @"password": password,
-    } options:0 error:nil];
-    request.HTTPBody = body;
-
-    [[session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
-        if (error == nil && [response isKindOfClass:[NSHTTPURLResponse class]]) {
-            NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
-            if (http.statusCode == 200 && data != nil) {
-                NSDictionary *payload = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-                NSString *localShortName = [payload isKindOfClass:[NSDictionary class]] ? payload[@"localShortName"] : nil;
-                if (localShortName.length > 0) {
-                    os_log_info([self logger], "auth_source=http result=allow localShortName=%{public}s", localShortName.UTF8String);
-                    [self completeAllowWithLocalShortName:localShortName password:password];
-                    return;
-                }
-            }
-
-            if (http.statusCode == 401) {
-                os_log_info([self logger], "auth_source=fallback reason=http_invalid_credentials username=%{public}s", username.UTF8String);
-                [self completeWithFallbackForUsername:username password:password];
-                return;
-            }
-        }
-
-        os_log_info([self logger], "auth_source=fallback reason=unexpected_error username=%{public}s", username.UTF8String);
-        [self completeWithFallbackForUsername:username password:password];
-    }] resume];
-}
-
-- (void)completeWithFallbackForUsername:(NSString *)username password:(NSString *)password {
-    NSDictionary *account = [self seededAccountForUsername:username password:password];
-    if (account != nil) {
-        NSString *localShortName = account[@"localShortName"];
-        os_log_info([self logger], "auth_source=fallback result=allow localShortName=%{public}s", localShortName.UTF8String);
-        [self completeAllowWithLocalShortName:localShortName password:password];
-        return;
-    }
-
-    os_log_error([self logger], "auth_source=fallback result=deny username=%{public}s", username.UTF8String);
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self setEnabled:YES];
-        self.statusLabel.textColor = NSColor.systemRedColor;
-        self.statusLabel.stringValue = @"SSO authentication failed.";
-    });
-}
-
-- (NSDictionary *)seededAccountForUsername:(NSString *)username password:(NSString *)password {
-    NSArray<NSDictionary *> *accounts = @[
-        @{@"username": @"demo.user", @"password": @"DemoPass123!", @"localShortName": @"demouser"},
-        @{@"username": @"it.admin", @"password": @"AdminPass123!", @"localShortName": @"itadmin"},
-        @{@"username": @"qa.user", @"password": @"QAPass123!", @"localShortName": @"qauser"},
-    ];
-
-    for (NSDictionary *account in accounts) {
-        if ([account[@"username"] isEqualToString:username] && [account[@"password"] isEqualToString:password]) {
-            return account;
-        }
-    }
-
-    return nil;
-}
-
-- (NSURL *)idpBaseURL {
-    NSString *value = NSProcessInfo.processInfo.environment[@"DEMO_LOGIN_PLUGIN_IDP_BASE_URL"];
-    if (value.length == 0) {
-        value = DemoPluginDefaultIDPBaseURL;
-    }
-    return [NSURL URLWithString:value];
+- (void)cancelPressed:(id)sender {
+    (void)sender;
+    os_log_info([self logger], "pre-login cancel pressed");
+    DemoPluginSetAuthorizationResult([self callbacks], [self engineRef], kAuthorizationResultUserCanceled);
 }
 
 - (void)completeAllowWithLocalShortName:(NSString *)localShortName password:(NSString *)password {
     dispatch_async(dispatch_get_main_queue(), ^{
+        os_log_info([self logger], "pre-login validate success applying credentials localShortName=%{public}s", localShortName.UTF8String);
         OSStatus status = DemoPluginApplyCredentials([self callbacks], [self engineRef], localShortName.UTF8String, password.UTF8String);
         if (status != errAuthorizationSuccess) {
             [self showError:@"Failed to hand credentials to macOS login chain."];
