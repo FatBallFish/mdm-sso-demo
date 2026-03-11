@@ -105,7 +105,7 @@ It does not yet modify the system authorization database unless that step is add
   --backup-file /tmp/system.login.console.backup.plist
 ```
 
-This reads the current `system.login.console` rule, inserts `DemoLoginPlugin:login` after `loginwindow:login`, and writes:
+This reads the current `system.login.console` rule, inserts `DemoLoginPlugin:login` before `loginwindow:login`, and writes:
 
 - a backup plist
 - a transformed plist ready for a later `security authorizationdb write`

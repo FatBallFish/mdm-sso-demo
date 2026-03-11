@@ -10,23 +10,24 @@ clang \
   -I "${ROOT_DIR}/Sources/DemoLoginPluginC/include" \
   -framework Cocoa \
   -framework Security \
-  -framework SecurityInterface \
   -framework CoreFoundation \
   "${ROOT_DIR}/scripts/tests/plugin_passthrough_harness.c" \
   "${ROOT_DIR}/Sources/DemoLoginPluginC/PluginEntry.c" \
-  "${ROOT_DIR}/Sources/DemoLoginPluginC/PluginLoginView.m" \
   -o "${OUT_BIN}"
 
-DEMO_PLUGIN_TEST_MODE="allow" \
+DEMO_LOGIN_SHELL_PATH="${ROOT_DIR}/scripts/tests/plugin_shell_helper.sh" \
+PLUGIN_HELPER_ACTION="allow" \
 EXPECT_RESULT="allow" \
 EXPECT_CONTEXT_USERNAME="demouser" \
 EXPECT_CONTEXT_PASSWORD="DemoPass123!" \
   "${OUT_BIN}"
 
-DEMO_PLUGIN_TEST_MODE="deny" \
+DEMO_LOGIN_SHELL_PATH="${ROOT_DIR}/scripts/tests/plugin_shell_helper.sh" \
+PLUGIN_HELPER_ACTION="deny" \
 EXPECT_RESULT="deny" \
   "${OUT_BIN}"
 
-DEMO_PLUGIN_FORCE_VIEW_CREATE_FAILURE="1" \
+DEMO_LOGIN_SHELL_PATH="${ROOT_DIR}/scripts/tests/plugin_shell_helper.sh" \
+PLUGIN_HELPER_EXIT_CODE="1" \
 EXPECT_RESULT="allow" \
   "${OUT_BIN}"

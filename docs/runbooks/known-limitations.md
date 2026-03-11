@@ -2,7 +2,7 @@
 
 ## Current revision
 
-This revision implements the supporting logic and local demo IdP for the Jamf-style path, and now includes a LoginWindow-hosted Authorization Services plug-in view for lab validation.
+This revision implements the supporting logic and local demo IdP for the Jamf-style path, and now uses an Authorization Services plug-in that spawns a native pre-login shell for lab validation.
 
 Implemented:
 
@@ -12,7 +12,7 @@ Implemented:
 - token refresh decision logic
 - password sync decision logic
 - native AppKit and SwiftUI login shell executable
-- Authorization Services plug-in entry-point with a LoginWindow-hosted pre-login UI
+- Authorization Services plug-in entry-point that launches a native pre-login shell before the local login prompt
 - real bundle packaging for `DemoLoginPlugin.bundle`
 - real staging install and uninstall into a chosen filesystem root
 - authorizationdb transform and restore scripts for lab-safe integration
@@ -32,7 +32,7 @@ You can validate:
 - account and token data contracts
 - bundle packaging and staged filesystem installation layout
 - how the live `system.login.console` rule would be transformed for this plug-in
-- that the plug-in can render a custom SSO view inside the LoginWindow-hosted login flow
+- that the plug-in can launch a custom pre-login shell and pass a local short name and password into the native login chain
 - that successful demo SSO validation can pass a local short name and password into the native login chain
 - the target system paths and uninstall flow shape
 

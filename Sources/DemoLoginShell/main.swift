@@ -81,10 +81,11 @@ final class DemoLoginShellAppDelegate: NSObject, NSApplicationDelegate {
         let hostingController = NSHostingController(rootView: rootView)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: size.width, height: size.height),
-            styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
+            styleMask: [.titled, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
+        configurePreLoginWindow(window)
         window.center()
         window.title = title
         window.contentViewController = hostingController

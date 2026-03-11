@@ -31,10 +31,8 @@ clang \
   -I "${ROOT_DIR}/Sources/DemoLoginPluginC/include" \
   -framework Cocoa \
   -framework Security \
-  -framework SecurityInterface \
   -framework CoreFoundation \
   "${ROOT_DIR}/Sources/DemoLoginPluginC/PluginEntry.c" \
-  "${ROOT_DIR}/Sources/DemoLoginPluginC/PluginLoginView.m" \
   -o "${BINARY_PATH}"
 
 cat > "${PLIST_PATH}" <<'EOF'

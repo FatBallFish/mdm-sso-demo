@@ -376,7 +376,7 @@ bash scripts/tests/authdb_transform_smoke.sh
 该测试会检查：
 
 - `DemoLoginPlugin:login` 已被插入
-- 插入位置在 `loginwindow:login` 之后，并保持在 `builtin:login-begin` 之前
+- 插入位置在 `loginwindow:login` 之前，并保持在 `builtin:login-begin` 之前
 - 重复执行时不会插入两次
 
 ### 10.3 从 backup 恢复
@@ -454,8 +454,8 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 
 但要注意：
 
-- 当前规则会把 `DemoLoginPlugin:login` 插到 `loginwindow:login` 之后
-- 注销后先进入系统登录宿主，再由 plug-in 在宿主中显示自定义 SSO 视图
+- 当前规则会把 `DemoLoginPlugin:login` 插到 `loginwindow:login` 之前
+- 注销后 plug-in 会先拉起独立的 `DemoLoginShell` 预登录窗口
 - 当前 live 场景优先覆盖“已有本地账户”的登录验证
 - 账户绑定、新建本地账户、密码不一致修复、`SecureToken` 仍未接入 live 登录链
 
@@ -473,8 +473,8 @@ security authorizationdb read system.login.console | grep "DemoLoginPlugin:login
 
 - `AuthorizationPluginCreate`
 - `MechanismCreate`
-- `MechanismInvoke showing pre-login view`
-- `auth_source=http ...` 或 `auth_source=fallback ...`
+- `MechanismInvoke showing pre-login shell`
+- `MechanismInvoke spawned login shell`
 - `MechanismInvoke completed result=...`
 - `MechanismDestroy`
 - `PluginDestroy`
@@ -501,16 +501,16 @@ sudo log show --last 10m --style compact --predicate '(subsystem == "com.demo.ss
 
 - `AuthorizationPluginCreate`
 - `MechanismCreate`
-- `MechanismInvoke showing pre-login view`
-- `auth_source=http result=allow` 或 `auth_source=fallback result=allow`
+- `MechanismInvoke showing pre-login shell`
+- `MechanismInvoke spawned login shell`
 - `MechanismInvoke completed result=0`
 
 如果你看到：
 
-- `MechanismInvoke failed creating login view`
-- `MechanismInvoke completed result=0`
+- `MechanismInvoke helper flow failed`
+- `MechanismInvoke pre-login shell unavailable, allowing native login`
 
-说明 plug-in 已经走了安全回退，放行原生登录链，避免再次把机器卡死。此时优先检查 authdb 规则是否还是旧的前插版本。
+说明 plug-in 已经走了安全回退，放行原生登录链，避免再次把机器卡死。此时优先检查 `DemoLoginShell` 是否已安装、是否能直接执行，以及 authdb 规则是否还是最新的前插版本。
 
 如果规则已写入，但完全看不到这些日志，优先排查：
 
