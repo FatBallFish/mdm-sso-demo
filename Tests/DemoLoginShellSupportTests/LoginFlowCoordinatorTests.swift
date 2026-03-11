@@ -111,6 +111,21 @@ final class LoginFlowCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(outcome, LoginShellOutcome.success(localShortName: "demouser"))
     }
+
+    func test_online_login_reports_local_service_failure_when_account_sync_throws() async throws {
+        let coordinator = LoginFlowCoordinator(
+            idpClient: StubIDPClient(result: .success(.fixture(subject: "demo.user", localShortName: "demouser"))),
+            accountSync: ThrowingAccountSyncClient()
+        )
+
+        let outcome = try await coordinator.authenticate(
+            username: "demo.user",
+            password: "DemoPass123!",
+            networkAvailable: true
+        )
+
+        XCTAssertEqual(outcome, LoginShellOutcome.failure(message: "Local account sync service failed."))
+    }
 }
 
 private struct StubIDPClient: DemoIDPAuthenticating {
@@ -164,6 +179,28 @@ private struct StubAccountSyncClient: AccountSyncing {
             lastTokenRefreshAt: .now,
             lastPasswordFingerprint: "cached"
         )
+    }
+}
+
+private struct ThrowingAccountSyncClient: AccountSyncing {
+    func resolveLocalAccount(subject: String) throws -> String? {
+        throw NSError(domain: "ThrowingAccountSyncClient", code: 1)
+    }
+
+    func recordSuccessfulOnlineLogin(subject: String, localShortName: String, password: String) throws -> AccountMapping {
+        throw NSError(domain: "ThrowingAccountSyncClient", code: 1)
+    }
+
+    func verifyOfflineLogin(subject: String, password: String) throws -> String? {
+        nil
+    }
+
+    func bindExistingLocalAccount(subject: String, localShortName: String, password: String) throws -> AccountMapping {
+        throw NSError(domain: "ThrowingAccountSyncClient", code: 1)
+    }
+
+    func createLocalAccount(subject: String, suggestedLocalShortName: String, password: String) throws -> AccountMapping {
+        throw NSError(domain: "ThrowingAccountSyncClient", code: 1)
     }
 }
 

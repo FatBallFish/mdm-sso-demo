@@ -13,8 +13,14 @@ public struct LoginFlowCoordinator: Sendable {
 
     public func authenticate(username: String, password: String, networkAvailable: Bool) async throws -> LoginShellOutcome {
         if networkAvailable {
+            let token: DemoTokenResponse
             do {
-                let token = try await idpClient.login(username: username, password: password)
+                token = try await idpClient.login(username: username, password: password)
+            } catch {
+                return .failure(message: "SSO authentication failed.")
+            }
+
+            do {
                 if let localShortName = try accountSync.resolveLocalAccount(subject: token.subject) {
                     _ = try accountSync.recordSuccessfulOnlineLogin(
                         subject: token.subject,
@@ -26,7 +32,7 @@ public struct LoginFlowCoordinator: Sendable {
 
                 return .needsAccountBinding(subject: token.subject)
             } catch {
-                return .failure(message: "SSO authentication failed.")
+                return .failure(message: "Local account sync service failed.")
             }
         }
 

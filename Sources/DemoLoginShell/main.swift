@@ -9,10 +9,11 @@ final class DemoLoginShellAppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         let viewModel = LoginViewModel()
         let root = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".demo-sso-state")
-        let daemonPath = ProcessInfo.processInfo.environment["DEMO_ACCOUNTSYNC_DAEMON_PATH"]
-            .map(URL.init(fileURLWithPath:))
-            ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-                .appendingPathComponent(".build/arm64-apple-macosx/debug/DemoAccountSyncDaemon")
+        let daemonPath = DemoRuntimeConfiguration.resolveDaemonExecutableURL(
+            environment: ProcessInfo.processInfo.environment,
+            executablePath: CommandLine.arguments[0],
+            currentDirectoryPath: FileManager.default.currentDirectoryPath
+        )
         let accountSync = DaemonProcessAccountSyncClient(
             daemonExecutableURL: daemonPath,
             stateRootURL: root
