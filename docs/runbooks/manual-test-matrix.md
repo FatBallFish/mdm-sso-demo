@@ -13,7 +13,7 @@
 9. In the shell, bind an existing local short name or create a suggested short name and confirm the UI transitions to success.
 10. Disable network in the shell toggle and confirm cached offline login works after one successful online login.
 11. Run `bash scripts/tests/login_broker_smoke.sh` and confirm the broker first returns `promptForAccountBinding` and then `allowLogin` after a mapping is created.
-12. Run `bash scripts/tests/plugin_bundle_smoke.sh` and confirm `dist/DemoLoginPlugin.bundle` contains `Contents/Info.plist` and an executable binary.
+12. Run `bash scripts/tests/plugin_bundle_smoke.sh` and confirm the generated plug-in bundle contains `Contents/Info.plist` and an executable binary.
 13. Run `bash scripts/tests/install_root_smoke.sh` and confirm a full staging install succeeds into a temp root.
 14. Run `bash scripts/tests/uninstall_root_smoke.sh` and confirm staged artifacts are removed again.
 15. Run `bash scripts/tests/authdb_transform_smoke.sh` and confirm the generated rule inserts `DemoLoginPlugin:login,privileged` after `loginwindow:login`.

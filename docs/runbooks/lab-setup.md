@@ -73,7 +73,13 @@ The broker returns JSON for the future LoginWindow plug-in layer, for example:
 ./scripts/build-login-plugin-bundle.sh
 ```
 
-This creates `dist/DemoLoginPlugin.bundle`, which is the first real LoginWindow plug-in artifact produced by the repo.
+This creates `~/Library/Caches/DemoSSO/plugin-dist/DemoLoginPlugin.bundle` by default, which is the first real LoginWindow plug-in artifact produced by the repo.
+
+If you need a different writable location:
+
+```bash
+./scripts/build-login-plugin-bundle.sh --output-root /tmp/demo-plugin-out
+```
 
 ## Stage install into a lab root
 

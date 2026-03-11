@@ -38,7 +38,7 @@ BIN_ROOT="${APP_SUPPORT_ROOT}/bin"
 CONFIG_ROOT="${APP_SUPPORT_ROOT}/config"
 STATE_ROOT="${APP_SUPPORT_ROOT}/state"
 AUTHDB_ROOT="${APP_SUPPORT_ROOT}/authdb"
-DIST_ROOT="${ROOT_DIR}/dist"
+DIST_ROOT="${DEMO_PLUGIN_OUTPUT_ROOT:-${HOME}/Library/Caches/DemoSSO/plugin-dist}"
 PLUGIN_BUNDLE_PATH="${DIST_ROOT}/DemoLoginPlugin.bundle"
 
 run_swift_build() {

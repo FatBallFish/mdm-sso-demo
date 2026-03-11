@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUTPUT_ROOT="${ROOT_DIR}/dist"
+OUTPUT_ROOT="${DEMO_PLUGIN_OUTPUT_ROOT:-${HOME}/Library/Caches/DemoSSO/plugin-dist}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

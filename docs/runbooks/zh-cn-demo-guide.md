@@ -102,7 +102,7 @@
 
 当前已经可以生成一个真实的 `.bundle` 产物：
 
-- `dist/DemoLoginPlugin.bundle`
+- `~/Library/Caches/DemoSSO/plugin-dist/DemoLoginPlugin.bundle`
 
 构建脚本：
 
@@ -291,7 +291,13 @@ bash scripts/tests/login_broker_smoke.sh
 
 生成产物：
 
-- `dist/DemoLoginPlugin.bundle`
+- `~/Library/Caches/DemoSSO/plugin-dist/DemoLoginPlugin.bundle`
+
+如果你想指定其他可写目录：
+
+```bash
+./scripts/build-login-plugin-bundle.sh --output-root /tmp/demo-plugin-out
+```
 
 ### 8.2 自动 smoke test
 
