@@ -226,6 +226,13 @@ curl http://127.0.0.1:48080/api/health
 ./scripts/start-login-shell.sh
 ```
 
+如果你的仓库放在 `Documents`、`Desktop` 之类受 macOS 隐私权限保护的目录里，旧版本脚本可能会在 `swift run` 编译阶段报：
+
+- `Operation not permitted`
+- 无法写入 `.build/...`
+
+当前脚本已经把 SwiftPM scratch/build 输出切到 `~/Library/Caches/DemoSSO/`，就是为了避开这个问题。
+
 ### 6.3 在窗口中演示登录与绑定流程
 
 推荐操作：
