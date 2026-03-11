@@ -46,8 +46,11 @@ func parseArguments() -> BrokerArguments {
 
 let arguments = parseArguments()
 let daemonURL = arguments.daemonExecutableURL
-    ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        .appendingPathComponent(".build/arm64-apple-macosx/debug/DemoAccountSyncDaemon")
+    ?? DemoRuntimeConfiguration.resolveDaemonExecutableURL(
+        environment: ProcessInfo.processInfo.environment,
+        executablePath: CommandLine.arguments[0],
+        currentDirectoryPath: FileManager.default.currentDirectoryPath
+    )
 
 let coordinator = LoginFlowCoordinator(
     idpClient: DemoIDPHTTPClient(baseURL: arguments.idpBaseURL),

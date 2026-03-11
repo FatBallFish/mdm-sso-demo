@@ -59,7 +59,7 @@ Behavior currently available in the shell:
 ## Broker-based login decision
 
 ```bash
-swift run DemoLoginBroker --username demo.user --password DemoPass123!
+./scripts/run-login-broker.sh --username demo.user --password DemoPass123!
 ```
 
 The broker returns JSON for the future LoginWindow plug-in layer, for example:

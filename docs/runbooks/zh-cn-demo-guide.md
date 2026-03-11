@@ -175,8 +175,10 @@ cd /Users/fatballfish/Documents/Projects/mdm-sso-demo/.worktrees/option-b-demo
 ### 5.2 构建和跑测试
 
 ```bash
-env HOME=$PWD/.home XDG_CACHE_HOME=$PWD/.swiftpm-cache CLANG_MODULE_CACHE_PATH=$PWD/.cache/clang swift test
-env HOME=$PWD/.home XDG_CACHE_HOME=$PWD/.swiftpm-cache CLANG_MODULE_CACHE_PATH=$PWD/.cache/clang swift build
+env HOME=$PWD/.home XDG_CACHE_HOME=$PWD/.swiftpm-cache CLANG_MODULE_CACHE_PATH=$PWD/.cache/clang \
+  swift test --scratch-path "${HOME}/Library/Caches/DemoSSO/swiftpm"
+env HOME=$PWD/.home XDG_CACHE_HOME=$PWD/.swiftpm-cache CLANG_MODULE_CACHE_PATH=$PWD/.cache/clang \
+  swift build --scratch-path "${HOME}/Library/Caches/DemoSSO/swiftpm"
 ```
 
 ### 5.3 已通过的验证项

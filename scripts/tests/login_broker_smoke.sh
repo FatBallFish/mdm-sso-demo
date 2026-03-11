@@ -5,7 +5,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PORT="${DEMO_IDP_TEST_PORT:-48086}"
 STATE_ROOT="${ROOT_DIR}/.broker-state"
 IDP_LOG="${ROOT_DIR}/.broker-idp.log"
-DAEMON_PATH="${ROOT_DIR}/.build/arm64-apple-macosx/debug/DemoAccountSyncDaemon"
 
 cleanup() {
   if [[ -n "${SERVER_PID:-}" ]]; then
@@ -28,29 +27,25 @@ done
 
 INITIAL_OUTPUT="$(
   cd "${ROOT_DIR}" && \
-  env HOME="${ROOT_DIR}/.home" XDG_CACHE_HOME="${ROOT_DIR}/.swiftpm-cache" CLANG_MODULE_CACHE_PATH="${ROOT_DIR}/.cache/clang" \
-    swift run DemoLoginBroker \
+    "${ROOT_DIR}/scripts/run-login-broker.sh" \
     --username demo.user \
     --password DemoPass123! \
     --idp-base-url "http://127.0.0.1:${PORT}/" \
-    --state-root "${STATE_ROOT}" \
-    --daemon "${DAEMON_PATH}"
+    --state-root "${STATE_ROOT}"
 )"
 
 echo "${INITIAL_OUTPUT}" | grep -q '"action":"promptForAccountBinding"'
 
 printf '%s' '{"action":"createLocalAccount","subject":"demo.user","suggestedLocalShortName":"demouser","password":"DemoPass123!"}' | \
-  DEMO_SSO_STATE_ROOT="${STATE_ROOT}" "${DAEMON_PATH}" --stdio-json >/dev/null
+  DEMO_SSO_STATE_ROOT="${STATE_ROOT}" "${HOME}/Library/Caches/DemoSSO/swiftpm/$(uname -m)-apple-macosx/debug/DemoAccountSyncDaemon" --stdio-json >/dev/null
 
 FINAL_OUTPUT="$(
   cd "${ROOT_DIR}" && \
-  env HOME="${ROOT_DIR}/.home" XDG_CACHE_HOME="${ROOT_DIR}/.swiftpm-cache" CLANG_MODULE_CACHE_PATH="${ROOT_DIR}/.cache/clang" \
-    swift run DemoLoginBroker \
+    "${ROOT_DIR}/scripts/run-login-broker.sh" \
     --username demo.user \
     --password DemoPass123! \
     --idp-base-url "http://127.0.0.1:${PORT}/" \
-    --state-root "${STATE_ROOT}" \
-    --daemon "${DAEMON_PATH}"
+    --state-root "${STATE_ROOT}"
 )"
 
 echo "${FINAL_OUTPUT}" | grep -q '"action":"allowLogin"'
